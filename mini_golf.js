@@ -8,9 +8,16 @@
 
 /*******************************************************/
 let gameState = "menu";
+
 let trackPoints = [];
 let res = 100;
 let seed;
+
+let ballX, ballY;
+let ballR = 14;
+
+let holeX, holeY;
+let holeR = 22;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -20,6 +27,7 @@ function setup() {
 function initLevel() {
   seed = random(1000);
   trackPoints = [];
+
   let cx = width / 2;
   let cy = height / 2;
   let noiseMax = 1;
@@ -32,6 +40,13 @@ function initLevel() {
     let y = cy + r * sin(a);
     trackPoints.push(createVector(x, y));
   }
+
+  holeX = trackPoints[0].x * 0.8 + cx * 0.2;
+  holeY = trackPoints[0].y * 0.8 + cy * 0.2;
+
+  let halfTrack = floor(res / 2);
+  ballX = trackPoints[halfTrack].x * 0.8 + cx * 0.2;
+  ballY = trackPoints[halfTrack].y * 0.8 + cy * 0.2;
 }
 
 function draw() {
@@ -55,7 +70,7 @@ function drawMenu() {
 
 function drawGame() {
   background(34, 100, 34);
-  // draw track
+
   fill(85, 180, 85);
   stroke(150, 220, 150);
   strokeWeight(8);
@@ -67,6 +82,22 @@ function drawGame() {
     curveVertex(trackPoints[i].x, trackPoints[i].y);
   }
   endShape();
+
+  fill(20);
+  noStroke();
+  circle(holeX, holeY, holeR * 2);
+
+  stroke(255);
+  strokeWeight(3);
+  line(holeX, holeY, holeX, holeY - 50);
+  fill(220, 50, 50);
+  noStroke();
+  triangle(holeX, holeY - 50, holeX + 28, holeY - 40, holeX, holeY - 30);
+
+  fill(255);
+  stroke(200);
+  strokeWeight(1);
+  circle(ballX, ballY, ballR * 2);
 }
 
 function mousePressed() {
