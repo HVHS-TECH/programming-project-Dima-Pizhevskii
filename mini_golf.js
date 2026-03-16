@@ -14,10 +14,16 @@ let res = 100;
 let seed;
 
 let ballX, ballY;
+let ballVelX = 0;
+let ballVelY = 0;
 let ballR = 14;
 
 let holeX, holeY;
 let holeR = 22;
+
+let dragging = false;
+let pickupX = 0;
+let pickupY = 0;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -27,6 +33,8 @@ function setup() {
 function initLevel() {
   seed = random(1000);
   trackPoints = [];
+  ballVelX = 0;
+  ballVelY = 0;
 
   let cx = width / 2;
   let cy = height / 2;
@@ -94,16 +102,45 @@ function drawGame() {
   noStroke();
   triangle(holeX, holeY - 50, holeX + 28, holeY - 40, holeX, holeY - 30);
 
+  ballX += ballVelX;
+  ballY += ballVelY;
+
   fill(255);
   stroke(200);
   strokeWeight(1);
   circle(ballX, ballY, ballR * 2);
+
+  if (dragging) {
+    stroke(255, 255, 0);
+    strokeWeight(3);
+    line(ballX, ballY, mouseX, mouseY);
+  }
 }
 
 function mousePressed() {
   if (gameState === "menu") {
     gameState = "play";
     initLevel();
+  } else if (gameState === "play") {
+    let isMoving = (abs(ballVelX) > 0 || abs(ballVelY) > 0);
+    let d = dist(mouseX, mouseY, ballX, ballY);
+
+    if (d < ballR * 3 && !isMoving) {
+      dragging = true;
+      pickupX = mouseX;
+      pickupY = mouseY;
+    }
+  }
+}
+
+function mouseReleased() {
+  if (gameState === "play" && dragging) {
+    dragging = false;
+    let pushX = pickupX - mouseX;
+    let pushY = pickupY - mouseY;
+
+    ballVelX = pushX * 0.1;
+    ballVelY = pushY * 0.1;
   }
 }
 /*******************************************************/
