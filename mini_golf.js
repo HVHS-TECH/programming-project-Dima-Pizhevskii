@@ -9,278 +9,203 @@
 
 /*******************************************************/
 
-
 let trackPoints = [];
-    let res = 150; // High resolution so the polygon collision math is accurate
-    let seed;
+let res = 100;
+let seed;
+
+
+let ballX, ballY;
+let ballVelX = 0;
+let ballVelY = 0;
+let ballR = 14;
+
+let holeX, holeY;
+let holeR = 22;
+
+let dragging = false;
+let pickupX = 0;
+let pickupY = 0;
+
+let level = 1;
+let won = false;
+
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  angleMode(DEGREES);
+  initLevel();
+
+}
+
+function initLevel() {
+  seed = random(1000);
+  won = false;
+  trackPoints = [];
+  
+  ballVelX = 0;
+  ballVelY = 0;
+
+  let cx = width / 2;
+  let cy = height / 2;
+  let noiseMax = 1;
+
+  for (let a = 0; a < 360; a += 360 / res) {
+    let xoff = map(cos(a), -1, 1, 0, noiseMax);
+    let yoff = map(sin(a), -1, 1, 0, noiseMax);
     
-    // Sprites
-    let ball;
-    let hole;
-    let obstacles = [];
+    let r = map(noise(seed + xoff, seed + yoff), 1.1, 1, 10, 100);
     
-    // Progression
-    let level = 0;
-    let won = false;
+    let x = cx + r * cos(a);
+    let y = cy + r * sin(a);
+    trackPoints.push(createVector(x, y));
+  }
 
-    function setup() {
-      createCanvas(windowWidth, windowHeight);
-      angleMode(DEGREES);
-      
-      // Check session storage for progressive difficulty across page reloads
-      if (sessionStorage.getItem('golfLevel')) {
-        level = parseInt(sessionStorage.getItem('golfLevel'));
-      }
-      
-      initLevel();
+  holeX = trackPoints[0].x * 0.8 + cx * 0.2;
+  holeY = trackPoints[0].y * 0.8 + cy * 0.2;
+
+  let halfTrack = floor(res / 2);
+  ballX = trackPoints[halfTrack].x * 0.8 + cx * 0.2;
+  ballY = trackPoints[halfTrack].y * 0.8 + cy * 0.2;
+}
+
+function draw() {
+  background(34, 100, 34);
+
+  fill(85, 180, 85);
+  stroke(150, 220, 150);
+  strokeWeight(8);
+
+  beginShape();
+  for (let i = 0; i < trackPoints.length; i++) {
+    curveVertex(trackPoints[i].x, trackPoints[i].y);
+  }
+  for (let i = 0; i < 3; i++) {
+    curveVertex(trackPoints[i].x, trackPoints[i].y);
+  }
+  endShape();
+
+  fill(20);
+  noStroke();
+  circle(holeX, holeY, holeR * 2);
+
+  stroke(255);
+  strokeWeight(3);
+  line(holeX, holeY, holeX, holeY - 50);
+  fill(220, 50, 50);
+  noStroke();
+  triangle(holeX, holeY - 50, holeX + 28, holeY - 40, holeX, holeY - 30);
+
+  if (!won) {
+    ballVelX *= 0.97;
+    ballVelY *= 0.97;
+
+    ballX += ballVelX;
+    ballY += ballVelY;
+
+    checkEdges();
+
+    fill(255);
+    stroke(200);
+    strokeWeight(1);
+    circle(ballX, ballY, ballR * 2);
+
+    if (dist(ballX, ballY, holeX, holeY) < holeR) {
+      won = true;
     }
 
-    function initLevel() {
-      seed = random(1000);
-      won = false;
-      trackPoints = [];
-      obstacles = [];
-      
-      generateTrackPoints();
-      
-      // Setup Sprites (0 degrees is right cap, 180 is left cap)
-      let holePos = trackPoints[0];
-      let ballPos = trackPoints[floor(res / 2)];
-      
-      // Move them safely inside the caps
-      hole = new Hole(holePos.x - 50, holePos.y);
-      ball = new Ball(ballPos.x + 50, ballPos.y);
-      
-      // Generate progressive obstacles safely inside the track
-      let attempts = 0;
-      while (obstacles.length < level && attempts < 500) {
-        // Pick a random spot in the bounding box
-        let rx = random(100, width - 100);
-        let ry = random(50, height - 50);
-        let testPoint = createVector(rx, ry);
-        
-        // Ensure it is on the grass AND not covering the ball/hole
-        if (pointInPolygon(testPoint, trackPoints) &&
-            testPoint.dist(ball.pos) > 80 && 
-            testPoint.dist(hole.pos) > 80) {
-          obstacles.push(new Obstacle(rx, ry));
-        }
-        attempts++;
-      }
+    if (dragging) {
+      stroke(255, 255, 0);
+      strokeWeight(3);
+      line(ballX, ballY, mouseX, mouseY);
     }
+  } else {
+    textAlign(CENTER, CENTER);
+    fill(255);
+    noStroke();
+    textSize(32);
+    text("HOLE IN ONE!", width / 2, height / 2 - 20);
+    textSize(16);
+    text("Click to play level " + (level + 1), width / 2, height / 2 + 20);
+  }
 
-    function draw() {
-      background(34, 100, 34); 
-      
-      // --- Draw Track ---
-      fill(85, 180, 85);
-      stroke(150, 220, 150);
-      strokeWeight(8);
-      
-      beginShape();
-      for (let p of trackPoints) curveVertex(p.x, p.y);
-      for (let i = 0; i < 3; i++) curveVertex(trackPoints[i].x, trackPoints[i].y);
-      endShape();
-      
-      // --- Update & Draw Sprites ---
-      hole.display();
-      
-      for (let obs of obstacles) {
-        obs.display();
-        obs.collide(ball); // Bounce ball off obstacles
-      }
+  textAlign(LEFT, TOP);
+  fill(255);
+  noStroke();
+  textSize(16);
+  text("Level: " + level, 20, 20);
+}
 
-      if (!won) {
-        ball.update(trackPoints);
-        ball.display();
-        
-        // Check win condition
-        if (ball.pos.dist(hole.pos) < hole.r) {
-          won = true;
-          ball.active = false; // Disappear
-        }
-      } else {
-        // Win Text
-        textAlign(CENTER, CENTER);
-        fill(255);
-        noStroke();
-        textSize(32);
-        text("HOLE IN ONE!", width / 2, height / 2 - 20);
-        textSize(16);
-        text(`Level ${level} Cleared. Click to advance to Level ${level + 1}`, width / 2, height / 2 + 20);
-      }
-      
-      // UI
-      textAlign(LEFT, TOP);
-      fill(255);
-      noStroke();
-      textSize(16);
-      text(`Level: ${level}`, 20, 20);
+function mousePressed() {
+  if (won) {
+    level++;
+    initLevel();
+  } else {
+    let d = dist(mouseX, mouseY, ballX, ballY);
+    if (d < ballR * 3) {
+      dragging = true;
+      pickupX = mouseX;
+      pickupY = mouseY;
     }
+  }
+}
 
-    // Move to next level on click
-    function mousePressed() {
-      level++;
-      sessionStorage.setItem('golfLevel', level);
-      initLevel();
+function mouseReleased() {
+  if (dragging) {
+    dragging = false;
+    let pushX = pickupX - mouseX;
+    let pushY = pickupY - mouseY;
+    
+    ballVelX = pushX * 0.1;
+    ballVelY = pushY * 0.1;
+  }
+}
+
+function checkEdges() {
+  let minDist = 9999;
+  let normalX = 0;
+  let normalY = 0;
+  let cpX = 0;
+  let cpY = 0;
+
+  for (let i = 0; i < trackPoints.length; i++) {
+    let p1 = trackPoints[i];
+    let p2 = trackPoints[(i + 1) % trackPoints.length];
+
+    let abX = p2.x - p1.x;
+    let abY = p2.y - p1.y;
+    let apX = ballX - p1.x;
+    let apY = ballY - p1.y;
+
+    let abMagSq = abX * abX + abY * abY;
+    let dot = apX * abX + apY * abY;
+    let t = Math.max(0, Math.min(1, dot / abMagSq));
+
+    let closestX = p1.x + t * abX;
+    let closestY = p1.y + t * abY;
+
+    let dX = ballX - closestX;
+    let dY = ballY - closestY;
+    let d = Math.sqrt(dX * dX + dY * dY);
+
+    if (d < minDist) {
+      minDist = d;
+      cpX = closestX;
+      cpY = closestY;
+      normalX = dX / d;
+      normalY = dY / d;
     }
+  }
 
-    // ==========================================
-    // SPRITE CLASSES
-    // ==========================================
-
-    class Ball {
-      constructor(x, y) {
-        this.pos = createVector(x, y);
-        // Random starting direction, speed of 4
-        this.vel = p5.Vector.random2D().mult(4); 
-        this.r = 14; // Larger ball
-        this.active = true;
-      }
-
-      update(polygon) {
-        if (!this.active) return;
-        this.pos.add(this.vel);
-        this.checkTrackEdges(polygon);
-      }
-
-      display() {
-        if (!this.active) return;
-        fill(255);
-        stroke(200);
-        strokeWeight(1);
-        circle(this.pos.x, this.pos.y, this.r * 2);
-        fill(0, 50); noStroke();
-        ellipse(this.pos.x + 2, this.pos.y + 4, this.r * 2, this.r); // Shadow
-      }
-
-      checkTrackEdges(polygon) {
-        let minDist = Infinity;
-        let closestNormal = null;
-        let closestPoint = null;
-
-        // Find the closest point on the polygon perimeter
-        for (let i = 0; i < polygon.length; i++) {
-          let a = createVector(polygon[i].x, polygon[i].y);
-          let b = createVector(polygon[(i+1) % polygon.length].x, polygon[(i+1) % polygon.length].y);
-          
-          let ab = p5.Vector.sub(b, a);
-          let ap = p5.Vector.sub(this.pos, a);
-          let t = constrain(ap.dot(ab) / ab.magSq(), 0, 1);
-          let cp = p5.Vector.add(a, p5.Vector.mult(ab, t));
-          
-          let d = p5.Vector.dist(this.pos, cp);
-          if (d < minDist) {
-            minDist = d;
-            closestPoint = cp;
-            // Normal pointing from the edge to the ball
-            closestNormal = p5.Vector.sub(this.pos, cp).normalize();
-          }
-        }
-
-        // Bounce if touching the edge
-        if (minDist <= this.r + 4) { // +4 accounts for the thick track stroke
-          // Push out to prevent getting stuck
-          this.pos = p5.Vector.add(closestPoint, p5.Vector.mult(closestNormal, this.r + 4));
-          // Reflect velocity against the normal
-          this.vel.reflect(closestNormal);
-        } else if (!pointInPolygon(this.pos, polygon)) {
-          // Failsafe: if it escapes the polygon entirely, invert velocity
-          this.vel.mult(-1);
-          this.pos.add(this.vel.copy().mult(2));
-        }
-      }
-    }
-
-    class Hole {
-      constructor(x, y) {
-        this.pos = createVector(x, y);
-        this.r = 22; // Larger hole
-      }
-      display() {
-        fill(20); noStroke();
-        circle(this.pos.x, this.pos.y, this.r * 2);
-        
-        // Flag
-        stroke(255); strokeWeight(3);
-        line(this.pos.x, this.pos.y, this.pos.x, this.pos.y - 50);
-        fill(220, 50, 50); noStroke();
-        triangle(this.pos.x, this.pos.y - 50, this.pos.x + 28, this.pos.y - 40, this.pos.x, this.pos.y - 30);
-      }
-    }
-
-    class Obstacle {
-      constructor(x, y) {
-        this.pos = createVector(x, y);
-        this.r = random(15, 25);
-      }
-      display() {
-        fill(150, 100, 50); // Wooden/Dirt color
-        stroke(100, 500, 400);
-        strokeWeight(3);
-        circle(this.pos.x, this.pos.y, this.r * 2);
-      }
-      collide(ball) {
-        if (!ball.active) return;
-        let d = this.pos.dist(ball.pos);
-        if (d < this.r + ball.r) {
-          // Standard circle-circle bounce collision
-          let normal = p5.Vector.sub(ball.pos, this.pos).normalize();
-          // Push ball out of the obstacle
-          ball.pos = p5.Vector.add(this.pos, p5.Vector.mult(normal, this.r + ball.r));
-          // Reflect ball velocity
-          ball.vel.reflect(normal);
-        }
-      }
-    }
-
-    // ==========================================
-    // UTILITIES
-    // ==========================================
-
-    function generateTrackPoints() {
-      let trackLength = random(950, 920); 
-      let trackWidth = random(100, 500);
-      let bendAmount = random(-120, 150);
-      let noiseAmount = 100;
-      
-      // Calculate coordinates using actual screen space (width/2) instead of translate()
-      // This makes the collision math much easier for the sprites.
-      let cx = width / 2;
-      let cy = height / 2;
-
-      for (let i = 0; i < res; i++) {
-        let angle = map(i, 0, res, 0, 360);
-        
-        let x = trackLength * cos(angle);
-        let y = trackWidth * sin(angle);
-        
-        let nx = cos(angle) * 0.5; 
-        let ny = sin(angle) * 0.5;
-        let displacement = map(noise(seed + nx, seed + ny), 0, 1, -noiseAmount, noiseAmount);
-        
-        x += displacement * cos(angle);
-        y += displacement * sin(angle);
-        
-        let warpAngle = map(x, -trackLength, trackLength, 0, 360);
-        y += sin(warpAngle) * bendAmount;
-        
-        // Push the final global screen coordinates
-        trackPoints.push({x: cx + x, y: cy + y});
-      }
-    }
-
-    // Ray-Casting algorithm to check if a point is inside a polygon boundary
-    function pointInPolygon(p, poly) {
-      let isInside = false;
-      for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-        let xi = poly[i].x, yi = poly[i].y;
-        let xj = poly[j].x, yj = poly[j].y;
-        let intersect = ((yi > p.y) !== (yj > p.y)) && (p.x < (xj - xi) * (p.y - yi) / (yj - yi) + xi);
-        if (intersect) isInside = !isInside;
-      }
-      return isInside;
-    }
+  if (minDist <= ballR + 4) {
+    ballX = cpX + normalX * (ballR + 4);
+    
+    let dotVel = ballVelX * normalX + ballVelY * normalY;
+    ballVelX = ballVelX - 2 * dotVel * normalX;
+    ballVelY = ballVelY - 2 * dotVel * normalY;
+    
+    ballVelX *= 0.8;
+    ballVelY *= 0.8;
+  }
+}
 /*******************************************************/
 //  END OF APP
 /*******************************************************/	
