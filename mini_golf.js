@@ -3,7 +3,7 @@
 // Create a sprite
 /// Written by ???
 /*******************************************************/
-	
+
 /*******************************************************/
 
 
@@ -40,7 +40,7 @@ function initLevel() {
   seed = random(1000);
   won = false;
   trackPoints = [];
-  
+
   ballVelX = 0;
   ballVelY = 0;
 
@@ -51,9 +51,9 @@ function initLevel() {
   for (let a = 0; a < 360; a += 360 / res) {
     let xoff = map(cos(a), -1, 1, 0, noiseMax);
     let yoff = map(sin(a), -1, 1, 0, noiseMax);
-    
-    let r = map(noise(seed + xoff, seed + yoff), 1.1, 1, 10, 100);
-    
+
+    let r = map(noise(seed + xoff, seed + yoff), 1.1, 0.8, 10, 100);
+
     let x = cx + r * cos(a);
     let y = cy + r * sin(a);
     trackPoints.push(createVector(x, y));
@@ -153,7 +153,7 @@ function mouseReleased() {
     dragging = false;
     let pushX = pickupX - mouseX;
     let pushY = pickupY - mouseY;
-    
+
     ballVelX = pushX * 0.1;
     ballVelY = pushY * 0.1;
   }
@@ -197,11 +197,11 @@ function checkEdges() {
 
   if (minDist <= ballR + 4) {
     ballX = cpX + normalX * (ballR + 4);
-    
+
     let dotVel = ballVelX * normalX + ballVelY * normalY;
     ballVelX = ballVelX - 2 * dotVel * normalX;
     ballVelY = ballVelY - 2 * dotVel * normalY;
-    
+
     ballVelX *= 0.8;
     ballVelY *= 0.8;
   }
