@@ -52,7 +52,7 @@ function initLevel() {
     let xoff = map(cos(a), -1, 1, 0, noiseMax);
     let yoff = map(sin(a), -1, 1, 0, noiseMax);
 
-    let r = map(noise(seed + xoff, seed + yoff), 1.1, 0.8, 10, 100);
+    let r = map(noise(seed + xoff, seed + yoff), 1.1, 0.78, 10, 100);
 
     let x = cx + r * cos(a);
     let y = cy + r * sin(a);
