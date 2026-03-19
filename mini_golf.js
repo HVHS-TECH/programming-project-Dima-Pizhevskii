@@ -102,6 +102,14 @@ function drawGame() {
   noStroke();
   triangle(holeX, holeY - 50, holeX + 28, holeY - 40, holeX, holeY - 30);
 
+  // physics - friction
+  ballVelX *= 0.97;
+  ballVelY *= 0.97;
+
+  // snap to zero if moving extremely slowly
+  if (abs(ballVelX) < 0.05) ballVelX = 0;
+  if (abs(ballVelY) < 0.05) ballVelY = 0;
+
   ballX += ballVelX;
   ballY += ballVelY;
 
