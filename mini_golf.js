@@ -8,6 +8,7 @@
 
 
 /*******************************************************/
+word = null
 
 let trackPoints = [];
 let res = 100;
@@ -28,6 +29,11 @@ let pickupY = 0;
 
 let level = 1;
 let won = false;
+
+
+let count = 0
+let winMsg = ""
+let hitCount = 0
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -116,24 +122,31 @@ function draw() {
       stroke(255, 255, 0);
       strokeWeight(3);
       line(ballX, ballY, mouseX, mouseY);
+
     }
   } else {
     textAlign(CENTER, CENTER);
     fill(255);
     noStroke();
     textSize(32);
-    text("HOLE IN ONE!", width / 2, height / 2 - 20);
+    text(word, width / 2, height / 2 - 20);
     textSize(16);
     text("Click to play level " + (level + 1), width / 2, height / 2 + 20);
   }
 
+// if (count = 5) {
+
+// }
   textAlign(LEFT, TOP);
   fill(255);
   noStroke();
   textSize(16);
   text("Level: " + level, 20, 20);
 }
-
+function test () {
+  text(holeSix, width / 2, height / 2 - 20)
+  console.log (success)
+}
 function mousePressed() {
   if (won) {
     level++;
@@ -146,8 +159,18 @@ function mousePressed() {
       pickupY = mouseY;
     }
   }
+        if (dragging) {
+          count = count+1
+      console.log (count)
+  }
+  if (count === 1) {
+    word = "sfsdfsf"
+  }
+    if (count === 2) {
+    word = "fsdfsdfdsfsdf"
+  }
 }
-
+  
 function mouseReleased() {
   if (dragging) {
     dragging = false;
@@ -157,7 +180,9 @@ function mouseReleased() {
     ballVelX = pushX * 0.1;
     ballVelY = pushY * 0.1;
   }
+
 }
+
 
 function checkEdges() {
   let minDist = 9999;
