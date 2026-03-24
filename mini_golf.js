@@ -102,16 +102,16 @@ function drawGame() {
   noStroke();
   triangle(holeX, holeY - 50, holeX + 28, holeY - 40, holeX, holeY - 30);
 
-  // physics - friction
   ballVelX *= 0.97;
   ballVelY *= 0.97;
 
-  // snap to zero if moving extremely slowly
   if (abs(ballVelX) < 0.05) ballVelX = 0;
   if (abs(ballVelY) < 0.05) ballVelY = 0;
 
   ballX += ballVelX;
   ballY += ballVelY;
+
+  checkEdges();
 
   fill(255);
   stroke(200);
@@ -149,6 +149,54 @@ function mouseReleased() {
 
     ballVelX = pushX * 0.1;
     ballVelY = pushY * 0.1;
+  }
+}
+
+function checkEdges() {
+  let minDist = 9999;
+  let normalX = 0;
+  let normalY = 0;
+  let cpX = 0;
+  let cpY = 0;
+
+  for (let i = 0; i < trackPoints.length; i++) {
+    let p1 = trackPoints[i];
+    let p2 = trackPoints[(i + 1) % trackPoints.length];
+
+    let abX = p2.x - p1.x;
+    let abY = p2.y - p1.y;
+    let apX = ballX - p1.x;
+    let apY = ballY - p1.y;
+
+    let abMagSq = abX * abX + abY * abY;
+    let dot = apX * abX + apY * abY;
+    let t = Math.max(0, Math.min(1, dot / abMagSq));
+
+    let closestX = p1.x + t * abX;
+    let closestY = p1.y + t * abY;
+
+    let dX = ballX - closestX;
+    let dY = ballY - closestY;
+    let d = Math.sqrt(dX * dX + dY * dY);
+
+    if (d < minDist) {
+      minDist = d;
+      cpX = closestX;
+      cpY = closestY;
+      normalX = dX / d;
+      normalY = dY / d;
+    }
+  }
+
+  if (minDist <= ballR + 4) {
+    ballX = cpX + normalX * (ballR + 4);
+
+    let dotVel = ballVelX * normalX + ballVelY * normalY;
+    ballVelX = ballVelX - 2 * dotVel * normalX;
+    ballVelY = ballVelY - 2 * dotVel * normalY;
+
+    ballVelX *= 0.8;
+    ballVelY *= 0.8;
   }
 }
 /*******************************************************/
