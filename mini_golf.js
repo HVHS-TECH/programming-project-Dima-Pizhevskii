@@ -25,6 +25,12 @@ let dragging = false;
 let pickupX = 0;
 let pickupY = 0;
 
+let won = false;
+let strokes = 0;
+let totalScore = 0;
+let winMsg = "";
+let numberWords = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
+
 function setup() {
   createCanvas(windowWidth, windowHeight);
   angleMode(DEGREES);
@@ -32,6 +38,8 @@ function setup() {
 
 function initLevel() {
   seed = random(1000);
+  won = false;
+  strokes = 0;
   trackPoints = [];
   ballVelX = 0;
   ballVelY = 0;
@@ -102,41 +110,75 @@ function drawGame() {
   noStroke();
   triangle(holeX, holeY - 50, holeX + 28, holeY - 40, holeX, holeY - 30);
 
-  ballVelX *= 0.97;
-  ballVelY *= 0.97;
+  if (!won) {
+    ballVelX *= 0.97;
+    ballVelY *= 0.97;
 
-  if (abs(ballVelX) < 0.05) ballVelX = 0;
-  if (abs(ballVelY) < 0.05) ballVelY = 0;
+    if (abs(ballVelX) < 0.05) ballVelX = 0;
+    if (abs(ballVelY) < 0.05) ballVelY = 0;
 
-  ballX += ballVelX;
-  ballY += ballVelY;
+    ballX += ballVelX;
+    ballY += ballVelY;
 
-  checkEdges();
+    checkEdges();
 
-  fill(255);
-  stroke(200);
-  strokeWeight(1);
-  circle(ballX, ballY, ballR * 2);
+    fill(255);
+    stroke(200);
+    strokeWeight(1);
+    circle(ballX, ballY, ballR * 2);
 
-  if (dragging) {
-    stroke(255, 255, 0);
-    strokeWeight(3);
-    line(ballX, ballY, mouseX, mouseY);
+    if (dist(ballX, ballY, holeX, holeY) < holeR) {
+      won = true;
+      totalScore += strokes;
+
+      if (strokes <= 10 && strokes > 0) {
+        winMsg = "Hole in " + numberWords[strokes] + "!";
+      } else {
+        winMsg = "Hole in " + strokes + "!";
+      }
+    }
+
+    if (dragging) {
+      stroke(255, 255, 0);
+      strokeWeight(3);
+      line(ballX, ballY, mouseX, mouseY);
+    }
+
+  } else {
+    textAlign(CENTER, CENTER);
+    fill(255);
+    noStroke();
+    textSize(32);
+    text(winMsg, width / 2, height / 2 - 20);
+    textSize(16);
+    text("Click to continue", width / 2, height / 2 + 20);
   }
+
+  textAlign(LEFT, TOP);
+  fill(255);
+  noStroke();
+  textSize(16);
+  text("Strokes: " + strokes, 20, 20);
+  text("Total Score: " + totalScore, 20, 45);
 }
 
 function mousePressed() {
   if (gameState === "menu") {
     gameState = "play";
+    totalScore = 0;
     initLevel();
   } else if (gameState === "play") {
-    let isMoving = (abs(ballVelX) > 0 || abs(ballVelY) > 0);
-    let d = dist(mouseX, mouseY, ballX, ballY);
+    if (won) {
+      initLevel();
+    } else {
+      let isMoving = (abs(ballVelX) > 0 || abs(ballVelY) > 0);
+      let d = dist(mouseX, mouseY, ballX, ballY);
 
-    if (d < ballR * 3 && !isMoving) {
-      dragging = true;
-      pickupX = mouseX;
-      pickupY = mouseY;
+      if (d < ballR * 3 && !isMoving) {
+        dragging = true;
+        pickupX = mouseX;
+        pickupY = mouseY;
+      }
     }
   }
 }
@@ -147,8 +189,11 @@ function mouseReleased() {
     let pushX = pickupX - mouseX;
     let pushY = pickupY - mouseY;
 
-    ballVelX = pushX * 0.1;
-    ballVelY = pushY * 0.1;
+    if (abs(pushX) > 5 || abs(pushY) > 5) {
+      ballVelX = pushX * 0.1;
+      ballVelY = pushY * 0.1;
+      strokes++;
+    }
   }
 }
 
