@@ -25,6 +25,7 @@ let dragging = false;
 let pickupX = 0;
 let pickupY = 0;
 
+let level = 1;
 let won = false;
 let strokes = 0;
 let totalScore = 0;
@@ -151,24 +152,27 @@ function drawGame() {
     textSize(32);
     text(winMsg, width / 2, height / 2 - 20);
     textSize(16);
-    text("Click to continue", width / 2, height / 2 + 20);
+    text("Click to play level " + (level + 1), width / 2, height / 2 + 20);
   }
 
   textAlign(LEFT, TOP);
   fill(255);
   noStroke();
   textSize(16);
-  text("Strokes: " + strokes, 20, 20);
-  text("Total Score: " + totalScore, 20, 45);
+  text("Level: " + level + " / 20", 20, 20);
+  text("Strokes: " + strokes, 20, 45);
+  text("Total Score: " + totalScore, 20, 70);
 }
 
 function mousePressed() {
   if (gameState === "menu") {
     gameState = "play";
+    level = 1;
     totalScore = 0;
     initLevel();
   } else if (gameState === "play") {
     if (won) {
+      level++;
       initLevel();
     } else {
       let isMoving = (abs(ballVelX) > 0 || abs(ballVelY) > 0);
