@@ -71,6 +71,8 @@ function draw() {
     drawMenu();
   } else if (gameState === "play") {
     drawGame();
+  } else if (gameState === "gameover") {
+    drawGameOver();
   }
 }
 
@@ -83,6 +85,19 @@ function drawMenu() {
   text("MINI GOLF", width / 2, height / 2 - 40);
   textSize(24);
   text("Click to Start", width / 2, height / 2 + 30);
+}
+
+function drawGameOver() {
+  background(34, 100, 34);
+  textAlign(CENTER, CENTER);
+  fill(255);
+  noStroke();
+  textSize(48);
+  text("COURSE COMPLETE", width / 2, height / 2 - 40);
+  textSize(24);
+  text("Total Score: " + totalScore + " strokes", width / 2, height / 2 + 10);
+  textSize(16);
+  text("Click to play again", width / 2, height / 2 + 60);
 }
 
 function drawGame() {
@@ -173,7 +188,11 @@ function mousePressed() {
   } else if (gameState === "play") {
     if (won) {
       level++;
-      initLevel();
+      if (level >= 20) {
+        gameState = "gameover";
+      } else {
+        initLevel();
+      }
     } else {
       let isMoving = (abs(ballVelX) > 0 || abs(ballVelY) > 0);
       let d = dist(mouseX, mouseY, ballX, ballY);
@@ -184,6 +203,8 @@ function mousePressed() {
         pickupY = mouseY;
       }
     }
+  } else if (gameState === "gameover") {
+    gameState = "menu";
   }
 }
 
