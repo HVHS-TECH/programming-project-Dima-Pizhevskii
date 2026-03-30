@@ -9,6 +9,8 @@
 /*******************************************************/
 let gameState = "menu";
 
+let obstacles = [];
+
 let trackPoints = [];
 let res = 100;
 let seed;
@@ -60,6 +62,15 @@ function initLevel() {
     let x = cx + r * cos(a);
     let y = cy + r * sin(a);
     trackPoints.push(createVector(x, y));
+
+    obstacles = [];
+    for (let i = 0; i < level; i++) {
+      obstacles.push({
+        x: random(width * 0.3, width * 0.7),
+        y: random(height * 0.3, height * 0.7),
+        r: 40
+      });
+    }
   }
 
   holeX = trackPoints[0].x * 0.8 + cx * 0.2;
@@ -130,6 +141,27 @@ function drawGame() {
   fill(220, 50, 50);
   noStroke();
   triangle(holeX, holeY - 50, holeX + 28, holeY - 40, holeX, holeY - 30);
+
+  //obstacles
+  for (let i = 0; i < obstacles.length; i++) {
+    let obs = obstacles[i];
+
+    // draw obstacles
+    fill(139, 69, 19);
+    circle(obs.x, obs.y, obs.r * 2);
+
+    // bounce logic
+    // if the distacne betwenn ball and obstacle is too smal
+    if (dist(ballX, ballY, obs.x, obs.y) < ballR + obs.r) {
+      // reverse speed
+      ballVelX = ballVelX * -1;
+      ballVelY = ballVelY * -1;
+
+      // move ball away so it wont stuck
+      ballX += ballVelX;
+      ballY += ballVelY;
+    }
+  }
 
   if (!won) {
     // physics
