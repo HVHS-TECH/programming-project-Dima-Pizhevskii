@@ -27,6 +27,8 @@ let pickupY = 0;
 
 let level = 1;
 let won = false;
+
+// scoring var
 let strokes = 0;
 let totalScore = 0;
 let winMsg = "";
@@ -42,6 +44,7 @@ function initLevel() {
   won = false;
   strokes = 0;
   trackPoints = [];
+
   ballVelX = 0;
   ballVelY = 0;
 
@@ -53,6 +56,7 @@ function initLevel() {
     let xoff = map(cos(a), -1, 1, 0, noiseMax);
     let yoff = map(sin(a), -1, 1, 0, noiseMax);
     let r = map(noise(seed + xoff, seed + yoff), 1.1, 0.78, 10, 100);
+
     let x = cx + r * cos(a);
     let y = cy + r * sin(a);
     trackPoints.push(createVector(x, y));
@@ -66,6 +70,7 @@ function initLevel() {
   ballY = trackPoints[halfTrack].y * 0.8 + cy * 0.2;
 }
 
+
 function draw() {
   if (gameState === "menu") {
     drawMenu();
@@ -75,7 +80,6 @@ function draw() {
     drawGameOver();
   }
 }
-
 function drawMenu() {
   background(34, 100, 34);
   textAlign(CENTER, CENTER);
@@ -86,7 +90,6 @@ function drawMenu() {
   textSize(24);
   text("Click to Start", width / 2, height / 2 + 30);
 }
-
 function drawGameOver() {
   background(34, 100, 34);
   textAlign(CENTER, CENTER);
@@ -99,10 +102,10 @@ function drawGameOver() {
   textSize(16);
   text("Click to play again", width / 2, height / 2 + 60);
 }
-
 function drawGame() {
   background(34, 100, 34);
 
+  // draw track
   fill(85, 180, 85);
   stroke(150, 220, 150);
   strokeWeight(8);
@@ -115,10 +118,12 @@ function drawGame() {
   }
   endShape();
 
+  // draw hole
   fill(20);
   noStroke();
   circle(holeX, holeY, holeR * 2);
 
+  // draw flag
   stroke(255);
   strokeWeight(3);
   line(holeX, holeY, holeX, holeY - 50);
@@ -127,9 +132,11 @@ function drawGame() {
   triangle(holeX, holeY - 50, holeX + 28, holeY - 40, holeX, holeY - 30);
 
   if (!won) {
+    // physics
     ballVelX *= 0.97;
     ballVelY *= 0.97;
 
+    // snaps to zero if moving extremely slowly to let the player to hit again
     if (abs(ballVelX) < 0.05) ballVelX = 0;
     if (abs(ballVelY) < 0.05) ballVelY = 0;
 
@@ -138,15 +145,18 @@ function drawGame() {
 
     checkEdges();
 
+    // draw ball
     fill(255);
     stroke(200);
     strokeWeight(1);
     circle(ballX, ballY, ballR * 2);
 
+    // check win
     if (dist(ballX, ballY, holeX, holeY) < holeR) {
       won = true;
       totalScore += strokes;
 
+      // word determinator for hole in...
       if (strokes <= 10 && strokes > 0) {
         winMsg = "Hole in " + numberWords[strokes] + "!";
       } else {
@@ -154,6 +164,7 @@ function drawGame() {
       }
     }
 
+    // slingshot line
     if (dragging) {
       stroke(255, 255, 0);
       strokeWeight(3);
@@ -161,6 +172,7 @@ function drawGame() {
     }
 
   } else {
+    // win msg
     textAlign(CENTER, CENTER);
     fill(255);
     noStroke();
@@ -170,6 +182,7 @@ function drawGame() {
     text("Click to play level " + (level + 1), width / 2, height / 2 + 20);
   }
 
+  // ui
   textAlign(LEFT, TOP);
   fill(255);
   noStroke();
@@ -179,14 +192,18 @@ function drawGame() {
   text("Total Score: " + totalScore, 20, 70);
 }
 
+// inputs/controls
 function mousePressed() {
   if (gameState === "menu") {
+    // start
     gameState = "play";
     level = 1;
     totalScore = 0;
     initLevel();
+
   } else if (gameState === "play") {
     if (won) {
+      // move to the next level
       level++;
       if (level >= 20) {
         gameState = "gameover";
@@ -194,6 +211,7 @@ function mousePressed() {
         initLevel();
       }
     } else {
+      // control ball only when its not moving
       let isMoving = (abs(ballVelX) > 0 || abs(ballVelY) > 0);
       let d = dist(mouseX, mouseY, ballX, ballY);
 
@@ -203,7 +221,9 @@ function mousePressed() {
         pickupY = mouseY;
       }
     }
+
   } else if (gameState === "gameover") {
+    // restarts game from end screen
     gameState = "menu";
   }
 }
@@ -214,6 +234,7 @@ function mouseReleased() {
     let pushX = pickupX - mouseX;
     let pushY = pickupY - mouseY;
 
+    // stroke counter
     if (abs(pushX) > 5 || abs(pushY) > 5) {
       ballVelX = pushX * 0.1;
       ballVelY = pushY * 0.1;
@@ -222,6 +243,7 @@ function mouseReleased() {
   }
 }
 
+// math of collisions
 function checkEdges() {
   let minDist = 9999;
   let normalX = 0;
@@ -258,6 +280,7 @@ function checkEdges() {
     }
   }
 
+  // bounce off if touching edge
   if (minDist <= ballR + 4) {
     ballX = cpX + normalX * (ballR + 4);
 
@@ -265,10 +288,12 @@ function checkEdges() {
     ballVelX = ballVelX - 2 * dotVel * normalX;
     ballVelY = ballVelY - 2 * dotVel * normalY;
 
+    // slow the ball down when hitting wall
     ballVelX *= 0.8;
     ballVelY *= 0.8;
   }
 }
+
 /*******************************************************/
 //  END OF APP
 /*******************************************************/	
